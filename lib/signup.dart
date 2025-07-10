@@ -1,17 +1,16 @@
 import 'package:flutter/material.dart';
-import 'package:attendencetracker/main.dart';
-import 'signup.dart';
+import 'package:attendencetracker/name.dart';
 
-class NamePage extends StatefulWidget {
+class SignUpPage extends StatefulWidget {
   @override
-  _NamePageState createState() => _NamePageState();
+  _SignUpPageState createState() => _SignUpPageState();
 }
 
-class _NamePageState extends State<NamePage> {
+class _SignUpPageState extends State<SignUpPage> {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
 
-  void _handleLogin() {
+  void _handleSignUp() {
     String email = _emailController.text.trim();
     String password = _passwordController.text.trim();
 
@@ -23,22 +22,14 @@ class _NamePageState extends State<NamePage> {
         ),
       );
     } else {
+      // For now, just navigate to the login page after sign up
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(
-          builder: (context) => MyHomePage(title: "Hello, $email"),
+          builder: (context) => NamePage(),
         ),
       );
     }
-  }
-
-  void _navigateToSignUp() {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => SignUpPage(),
-      ),
-    );
   }
 
   @override
@@ -53,7 +44,7 @@ class _NamePageState extends State<NamePage> {
     return Scaffold(
       backgroundColor: Colors.deepPurple[50],
       appBar: AppBar(
-        title: Text("Login"),
+        title: Text("Sign Up"),
         backgroundColor: Colors.deepPurple,
         elevation: 4,
         shadowColor: Colors.deepPurpleAccent,
@@ -77,15 +68,6 @@ class _NamePageState extends State<NamePage> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Text(
-                "Welcome Back",
-                style: TextStyle(
-                  fontSize: 28,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.deepPurple,
-                ),
-              ),
-              SizedBox(height: 30),
               TextField(
                 controller: _emailController,
                 style: TextStyle(color: Colors.deepPurple[900]),
@@ -120,30 +102,17 @@ class _NamePageState extends State<NamePage> {
               ),
               SizedBox(height: 30),
               ElevatedButton(
-                onPressed: _handleLogin,
-                child: Text("Login"),
+                onPressed: _handleSignUp,
+                child: Text("Sign Up"),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.deepPurple,
-                  padding: EdgeInsets.symmetric(horizontal: 60, vertical: 15),
+                  padding: EdgeInsets.symmetric(horizontal: 80, vertical: 15),
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(25),
+                    borderRadius: BorderRadius.circular(30),
                   ),
-                  textStyle: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                  ),
+                  textStyle: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                   elevation: 5,
-                ),
-              ),
-              SizedBox(height: 15),
-              TextButton(
-                onPressed: _navigateToSignUp,
-                child: Text(
-                  "Don't have an account? Sign Up",
-                  style: TextStyle(
-                    color: Colors.deepPurple,
-                    decoration: TextDecoration.underline,
-                  ),
+                  shadowColor: Colors.deepPurpleAccent,
                 ),
               ),
             ],
