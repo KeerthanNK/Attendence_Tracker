@@ -1,0 +1,23 @@
+// Firestore Security Rules for Attendance Tracker
+// Copy these rules to your Firebase Console > Firestore Database > Rules
+
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Allow users to read and write their own data
+    match /users/{userId} {
+      // Allow access only if the user is authenticated and accessing their own data
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+      
+      // Allow access to subcollections (subjects)
+      match /subjects/{subjectId} {
+        allow read, write: if request.auth != null && request.auth.uid == userId;
+      }
+    }
+    
+    // Deny all other access
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+} 

@@ -1,43 +1,105 @@
 import 'package:flutter/material.dart';
-import 'package:attendencetracker/main.dart';
+import 'package:attendencetracker/teacher_view.dart';
+import 'package:attendencetracker/student_view.dart';
+import 'package:attendencetracker/firebase_service_simple.dart';
 import 'signup.dart';
 
 class NamePage extends StatefulWidget {
+  final String role;
+  const NamePage({super.key, required this.role});
+
   @override
-  _NamePageState createState() => _NamePageState();
+  State<NamePage> createState() => _NamePageState();
 }
 
 class _NamePageState extends State<NamePage> {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
 
-  void _handleLogin() {
+  final FirebaseServiceSimple _firebaseService = FirebaseServiceSimple();
+  bool _isLoading = false;
+
+  void _handleLogin() async {
     String email = _emailController.text.trim();
     String password = _passwordController.text.trim();
 
     if (email.isEmpty || password.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text("Please enter both email and password"),
-          backgroundColor: Colors.redAccent,
-        ),
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text("Please enter both email and password"),
+            backgroundColor: Colors.redAccent,
+          ),
+        );
+      }
+      return;
+    }
+
+    // Debug: Check Firebase initialization
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      print("Attempting login with email: $email and role: ${widget.role}");
+
+      await _firebaseService.signInWithRoleVerification(
+        email,
+        password,
+        widget.role,
       );
-    } else {
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(
-          builder: (context) => MyHomePage(title: "Hello, $email"),
-        ),
-      );
+      // On successful login, navigate to appropriate view
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder:
+                (context) =>
+                    widget.role == "teacher"
+                        ? TeacherView(title: "Hello, $email", role: widget.role)
+                        : StudentView(
+                          title: "Hello, $email",
+                          role: widget.role,
+                        ),
+          ),
+        );
+      }
+    } catch (e) {
+      String message = "An error occurred";
+      if (e.toString().contains('user-not-found')) {
+        message = "No user found for that email.";
+      } else if (e.toString().contains('wrong-password')) {
+        message = "Wrong password provided for that user.";
+      } else if (e.toString().contains('invalid-email')) {
+        message = "The email address is not valid.";
+      } else if (e.toString().contains('user-disabled')) {
+        message = "This user account has been disabled.";
+      } else if (e.toString().contains('too-many-requests')) {
+        message = "Too many failed login attempts. Please try again later.";
+      } else if (e.toString().contains('Invalid role')) {
+        message =
+            "This account is not registered as a ${widget.role}. Please sign up as a ${widget.role}.";
+      } else {
+        message = "Login error: ${e.toString()}";
+      }
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(message), backgroundColor: Colors.redAccent),
+        );
+      }
     }
   }
 
   void _navigateToSignUp() {
     Navigator.push(
       context,
-      MaterialPageRoute(
-        builder: (context) => SignUpPage(),
-      ),
+      MaterialPageRoute(builder: (context) => SignUpPage(role: widget.role)),
     );
   }
 
@@ -53,10 +115,14 @@ class _NamePageState extends State<NamePage> {
     return Scaffold(
       backgroundColor: Colors.deepPurple[50],
       appBar: AppBar(
-        title: Text("Login"),
-        backgroundColor: Colors.deepPurple,
+        title: Text("Login - ${widget.role.toUpperCase()}"),
+        backgroundColor:
+            widget.role == "teacher" ? Colors.orange : Colors.deepPurple,
         elevation: 4,
-        shadowColor: Colors.deepPurpleAccent,
+        shadowColor:
+            widget.role == "teacher"
+                ? Colors.orangeAccent
+                : Colors.deepPurpleAccent,
       ),
       body: Center(
         child: Container(
@@ -67,7 +133,7 @@ class _NamePageState extends State<NamePage> {
             borderRadius: BorderRadius.circular(25),
             boxShadow: [
               BoxShadow(
-                color: Colors.deepPurple.withOpacity(0.3),
+                color: Colors.deepPurple.withValues(alpha: 0.3),
                 blurRadius: 15,
                 offset: Offset(0, 8),
               ),
@@ -120,8 +186,7 @@ class _NamePageState extends State<NamePage> {
               ),
               SizedBox(height: 30),
               ElevatedButton(
-                onPressed: _handleLogin,
-                child: Text("Login"),
+                onPressed: _isLoading ? null : _handleLogin,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.deepPurple,
                   padding: EdgeInsets.symmetric(horizontal: 60, vertical: 15),
@@ -134,6 +199,19 @@ class _NamePageState extends State<NamePage> {
                   ),
                   elevation: 5,
                 ),
+                child:
+                    _isLoading
+                        ? SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            valueColor: AlwaysStoppedAnimation<Color>(
+                              Colors.white,
+                            ),
+                          ),
+                        )
+                        : Text("Login"),
               ),
               SizedBox(height: 15),
               TextButton(

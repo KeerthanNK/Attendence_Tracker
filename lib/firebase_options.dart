@@ -1,5 +1,6 @@
 import 'package:firebase_core/firebase_core.dart' show FirebaseOptions;
-import 'package:flutter/foundation.dart' show defaultTargetPlatform, kIsWeb, TargetPlatform;
+import 'package:flutter/foundation.dart'
+    show defaultTargetPlatform, kIsWeb, TargetPlatform;
 
 class DefaultFirebaseOptions {
   static FirebaseOptions get currentPlatform {
@@ -18,26 +19,28 @@ class DefaultFirebaseOptions {
       case TargetPlatform.linux:
         return linux;
       default:
-        throw UnsupportedError('DefaultFirebaseOptions are not supported for this platform.');
+        throw UnsupportedError(
+          'DefaultFirebaseOptions are not supported for this platform.',
+        );
     }
   }
 
   static const FirebaseOptions web = FirebaseOptions(
-    apiKey: 'YOUR_WEB_API_KEY',
-    authDomain: 'YOUR_WEB_AUTH_DOMAIN',
-    projectId: 'YOUR_PROJECT_ID',
-    storageBucket: 'YOUR_STORAGE_BUCKET',
-    messagingSenderId: 'YOUR_MESSAGING_SENDER_ID',
-    appId: 'YOUR_WEB_APP_ID',
-    measurementId: 'YOUR_MEASUREMENT_ID',
+    apiKey: 'AIzaSyBZGyVhnJsw5__ncSlxzginU26i6Dsjggc',
+    authDomain: 'student-tracker-f829a.firebaseapp.com',
+    projectId: 'student-tracker-f829a',
+    storageBucket: 'student-tracker-f829a.firebasestorage.app',
+    messagingSenderId: '103907075856',
+    appId: '1:103907075856:web:e95ce5b7e499c3152ae795',
+    measurementId: 'G-TRH84FM7L6',
   );
 
   static const FirebaseOptions android = FirebaseOptions(
-    apiKey: 'YOUR_ANDROID_API_KEY',
-    appId: 'YOUR_ANDROID_APP_ID',
-    messagingSenderId: 'YOUR_MESSAGING_SENDER_ID',
-    projectId: 'YOUR_PROJECT_ID',
-    storageBucket: 'YOUR_STORAGE_BUCKET',
+    apiKey: 'AIzaSyBzBasM2M77xQ4YvnGxJnry3rcL0pcqbEQ',
+    appId: '1:103907075856:android:d4428ed938cddb5a2ae795',
+    messagingSenderId: '103907075856',
+    projectId: 'student-tracker-f829a',
+    storageBucket: 'student-tracker-f829a.firebasestorage.app',
   );
 
   static const FirebaseOptions ios = FirebaseOptions(

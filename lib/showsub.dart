@@ -1,21 +1,17 @@
 import 'package:flutter/material.dart';
 
 class ShowSubjects extends StatelessWidget {
-  final List<String> subjects;
-  final List<int> totalClasses;
-  final List<int> presentClasses;
-  final List<int> absentClasses;
-  final Function(int) onAdd;
-  final Function(int) onRemove;
+  final List<Map<String, dynamic>> subjects;
+  final Function(String) onAdd;
+  final Function(String) onRemove;
+  final Function(String)? onDelete;
 
   const ShowSubjects({
     super.key,
     required this.subjects,
-    required this.totalClasses,
-    required this.presentClasses,
-    required this.absentClasses,
     required this.onAdd,
     required this.onRemove,
+    this.onDelete,
   });
 
   @override
@@ -29,10 +25,15 @@ class ShowSubjects extends StatelessWidget {
     return ListView.builder(
       itemCount: subjects.length,
       itemBuilder: (context, index) {
+        final subject = subjects[index];
+        final String subjectId = subject['id'] as String;
+        final String subjectName = subject['name'] as String;
+        final int totalClasses = subject['totalClasses'] as int;
+        final int presentClasses = subject['presentClasses'] as int;
+        final int absentClasses = subject['absentClasses'] as int;
+
         double percentage =
-            totalClasses[index] > 0
-                ? (presentClasses[index] / totalClasses[index]) * 100
-                : 0.0;
+            totalClasses > 0 ? (presentClasses / totalClasses) * 100 : 0.0;
 
         return Container(
           margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
@@ -53,7 +54,7 @@ class ShowSubjects extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          subjects[index],
+                          subjectName,
                           style: const TextStyle(
                             fontSize: 22,
                             fontWeight: FontWeight.bold,
@@ -61,9 +62,9 @@ class ShowSubjects extends StatelessWidget {
                           ),
                         ),
                         const SizedBox(height: 6),
-                        Text("Total Classes: ${totalClasses[index]}"),
-                        Text("Present: ${presentClasses[index]}"),
-                        Text("Absent: ${absentClasses[index]}"),
+                        Text("Total Classes: $totalClasses"),
+                        Text("Present: $presentClasses"),
+                        Text("Absent: $absentClasses"),
                         const SizedBox(height: 8),
                         LinearProgressIndicator(
                           value: percentage / 100,
@@ -91,7 +92,7 @@ class ShowSubjects extends StatelessWidget {
                       Tooltip(
                         message: 'Mark Present',
                         child: IconButton(
-                          onPressed: () => onAdd(index),
+                          onPressed: () => onAdd(subjectId),
                           icon: const Icon(Icons.add_circle),
                           color: Colors.green,
                           iconSize: 30,
@@ -100,18 +101,64 @@ class ShowSubjects extends StatelessWidget {
                       Tooltip(
                         message: 'Mark Absent',
                         child: IconButton(
-                          onPressed: () => onRemove(index),
+                          onPressed: () => onRemove(subjectId),
                           icon: const Icon(Icons.remove_circle),
                           color: Colors.red,
                           iconSize: 30,
                         ),
                       ),
+                      if (onDelete != null)
+                        Tooltip(
+                          message: 'Delete Subject',
+                          child: IconButton(
+                            onPressed:
+                                () => _showDeleteDialog(
+                                  context,
+                                  subjectId,
+                                  subjectName,
+                                ),
+                            icon: const Icon(Icons.delete),
+                            color: Colors.orange,
+                            iconSize: 30,
+                          ),
+                        ),
                     ],
                   ),
                 ],
               ),
             ),
           ),
+        );
+      },
+    );
+  }
+
+  void _showDeleteDialog(
+    BuildContext context,
+    String subjectId,
+    String subjectName,
+  ) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Delete Subject'),
+          content: Text(
+            'Are you sure you want to delete "$subjectName"? This action cannot be undone.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+                onDelete!(subjectId);
+              },
+              child: const Text('Delete', style: TextStyle(color: Colors.red)),
+            ),
+          ],
         );
       },
     );

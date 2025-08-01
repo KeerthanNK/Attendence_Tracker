@@ -1,34 +1,62 @@
 import 'package:flutter/material.dart';
 import 'package:attendencetracker/name.dart';
+import 'package:attendencetracker/firebase_service_simple.dart';
 
 class SignUpPage extends StatefulWidget {
+  final String role;
+  const SignUpPage({super.key, required this.role});
+
   @override
-  _SignUpPageState createState() => _SignUpPageState();
+  State<SignUpPage> createState() => _SignUpPageState();
 }
 
 class _SignUpPageState extends State<SignUpPage> {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
 
-  void _handleSignUp() {
+  final FirebaseServiceSimple _firebaseService = FirebaseServiceSimple();
+
+  void _handleSignUp() async {
     String email = _emailController.text.trim();
     String password = _passwordController.text.trim();
 
     if (email.isEmpty || password.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text("Please enter both email and password"),
-          backgroundColor: Colors.redAccent,
-        ),
-      );
-    } else {
-      // For now, just navigate to the login page after sign up
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(
-          builder: (context) => NamePage(),
-        ),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text("Please enter both email and password"),
+            backgroundColor: Colors.redAccent,
+          ),
+        );
+      }
+      return;
+    }
+
+    try {
+      await _firebaseService.createUserWithRole(email, password, widget.role);
+      // On successful sign up, navigate to login page
+      if (mounted) {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => NamePage(role: widget.role)),
+        );
+      }
+    } catch (e) {
+      String message = "An error occurred";
+      if (e.toString().contains('weak-password')) {
+        message = "The password provided is too weak.";
+      } else if (e.toString().contains('email-already-in-use')) {
+        message = "The account already exists for that email.";
+      } else if (e.toString().contains('invalid-email')) {
+        message = "The email address is not valid.";
+      } else {
+        message = "Failed to sign up. Please try again.";
+      }
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(message), backgroundColor: Colors.redAccent),
+        );
+      }
     }
   }
 
@@ -58,7 +86,7 @@ class _SignUpPageState extends State<SignUpPage> {
             borderRadius: BorderRadius.circular(25),
             boxShadow: [
               BoxShadow(
-                color: Colors.deepPurple.withOpacity(0.3),
+                color: Colors.deepPurple.withValues(alpha: 0.3),
                 blurRadius: 15,
                 offset: Offset(0, 8),
               ),
@@ -103,17 +131,20 @@ class _SignUpPageState extends State<SignUpPage> {
               SizedBox(height: 30),
               ElevatedButton(
                 onPressed: _handleSignUp,
-                child: Text("Sign Up"),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.deepPurple,
                   padding: EdgeInsets.symmetric(horizontal: 80, vertical: 15),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(30),
                   ),
-                  textStyle: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  textStyle: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
                   elevation: 5,
                   shadowColor: Colors.deepPurpleAccent,
                 ),
+                child: Text("Sign Up"),
               ),
             ],
           ),
