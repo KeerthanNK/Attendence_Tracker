@@ -13,18 +13,23 @@ class SignUpPage extends StatefulWidget {
 class _SignUpPageState extends State<SignUpPage> {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
+  final TextEditingController _confirmPasswordController = TextEditingController();
 
   final FirebaseServiceSimple _firebaseService = FirebaseServiceSimple();
+  bool _isLoading = false;
+  bool _obscurePassword = true;
+  bool _obscureConfirmPassword = true;
 
   void _handleSignUp() async {
     String email = _emailController.text.trim();
     String password = _passwordController.text.trim();
+    String confirmPassword = _confirmPasswordController.text.trim();
 
-    if (email.isEmpty || password.isEmpty) {
+    if (email.isEmpty || password.isEmpty || confirmPassword.isEmpty) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text("Please enter both email and password"),
+            content: Text("Please fill in all fields"),
             backgroundColor: Colors.redAccent,
           ),
         );
@@ -32,10 +37,47 @@ class _SignUpPageState extends State<SignUpPage> {
       return;
     }
 
+    if (password != confirmPassword) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text("Passwords do not match"),
+            backgroundColor: Colors.redAccent,
+          ),
+        );
+      }
+      return;
+    }
+
+    if (password.length < 6) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text("Password must be at least 6 characters long"),
+            backgroundColor: Colors.redAccent,
+          ),
+        );
+      }
+      return;
+    }
+
+    setState(() {
+      _isLoading = true;
+    });
+
     try {
       await _firebaseService.createUserWithRole(email, password, widget.role);
       // On successful sign up, navigate to login page
       if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text("Account created successfully! Please login."),
+            backgroundColor: Colors.green,
+          ),
+        );
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(builder: (context) => NamePage(role: widget.role)),
@@ -53,6 +95,9 @@ class _SignUpPageState extends State<SignUpPage> {
         message = "Failed to sign up. Please try again.";
       }
       if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(message), backgroundColor: Colors.redAccent),
         );
@@ -64,6 +109,7 @@ class _SignUpPageState extends State<SignUpPage> {
   void dispose() {
     _emailController.dispose();
     _passwordController.dispose();
+    _confirmPasswordController.dispose();
     super.dispose();
   }
 
@@ -72,81 +118,192 @@ class _SignUpPageState extends State<SignUpPage> {
     return Scaffold(
       backgroundColor: Colors.deepPurple[50],
       appBar: AppBar(
-        title: Text("Sign Up"),
-        backgroundColor: Colors.deepPurple,
+        title: Text("Sign Up - ${widget.role.toUpperCase()}"),
+        backgroundColor: widget.role == "teacher" ? Colors.orange : Colors.deepPurple,
         elevation: 4,
-        shadowColor: Colors.deepPurpleAccent,
+        shadowColor: widget.role == "teacher" ? Colors.orangeAccent : Colors.deepPurpleAccent,
       ),
       body: Center(
-        child: Container(
-          height: 450,
-          width: 320,
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(25),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.deepPurple.withValues(alpha: 0.3),
-                blurRadius: 15,
-                offset: Offset(0, 8),
-              ),
-            ],
-          ),
-          padding: EdgeInsets.symmetric(horizontal: 24, vertical: 32),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              TextField(
-                controller: _emailController,
-                style: TextStyle(color: Colors.deepPurple[900]),
-                decoration: InputDecoration(
-                  labelText: "Email",
-                  labelStyle: TextStyle(color: Colors.deepPurple[400]),
-                  filled: true,
-                  fillColor: Colors.deepPurple[50],
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(15),
-                    borderSide: BorderSide.none,
-                  ),
-                  prefixIcon: Icon(Icons.email, color: Colors.deepPurple[400]),
+        child: SingleChildScrollView(
+          padding: EdgeInsets.all(24),
+          child: Container(
+            width: 350,
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(25),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.deepPurple.withValues(alpha: 0.3),
+                  blurRadius: 15,
+                  offset: Offset(0, 8),
                 ),
-              ),
-              SizedBox(height: 20),
-              TextField(
-                controller: _passwordController,
-                obscureText: true,
-                style: TextStyle(color: Colors.deepPurple[900]),
-                decoration: InputDecoration(
-                  labelText: "Password",
-                  labelStyle: TextStyle(color: Colors.deepPurple[400]),
-                  filled: true,
-                  fillColor: Colors.deepPurple[50],
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(15),
-                    borderSide: BorderSide.none,
+              ],
+            ),
+            padding: EdgeInsets.symmetric(horizontal: 32, vertical: 40),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Header
+                Container(
+                  padding: EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    color: (widget.role == "teacher" ? Colors.orange : Colors.deepPurple).withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(50),
                   ),
-                  prefixIcon: Icon(Icons.lock, color: Colors.deepPurple[400]),
+                  child: Icon(
+                    widget.role == "teacher" ? Icons.school : Icons.person,
+                    size: 50,
+                    color: widget.role == "teacher" ? Colors.orange : Colors.deepPurple,
+                  ),
                 ),
-              ),
-              SizedBox(height: 30),
-              ElevatedButton(
-                onPressed: _handleSignUp,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.deepPurple,
-                  padding: EdgeInsets.symmetric(horizontal: 80, vertical: 15),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(30),
-                  ),
-                  textStyle: TextStyle(
-                    fontSize: 18,
+                SizedBox(height: 24),
+                Text(
+                  "Create Account",
+                  style: TextStyle(
+                    fontSize: 28,
                     fontWeight: FontWeight.bold,
+                    color: Colors.deepPurple[800],
                   ),
-                  elevation: 5,
-                  shadowColor: Colors.deepPurpleAccent,
                 ),
-                child: Text("Sign Up"),
-              ),
-            ],
+                SizedBox(height: 8),
+                Text(
+                  "Join as ${widget.role}",
+                  style: TextStyle(
+                    fontSize: 16,
+                    color: Colors.deepPurple[600],
+                  ),
+                ),
+                SizedBox(height: 32),
+                
+                // Email Field
+                TextField(
+                  controller: _emailController,
+                  style: TextStyle(color: Colors.deepPurple[900]),
+                  decoration: InputDecoration(
+                    labelText: "Email Address",
+                    labelStyle: TextStyle(color: Colors.deepPurple[400]),
+                    filled: true,
+                    fillColor: Colors.deepPurple[50],
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(15),
+                      borderSide: BorderSide.none,
+                    ),
+                    prefixIcon: Icon(Icons.email, color: Colors.deepPurple[400]),
+                    contentPadding: EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                  ),
+                ),
+                SizedBox(height: 20),
+                
+                // Password Field
+                TextField(
+                  controller: _passwordController,
+                  obscureText: _obscurePassword,
+                  style: TextStyle(color: Colors.deepPurple[900]),
+                  decoration: InputDecoration(
+                    labelText: "Password",
+                    labelStyle: TextStyle(color: Colors.deepPurple[400]),
+                    filled: true,
+                    fillColor: Colors.deepPurple[50],
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(15),
+                      borderSide: BorderSide.none,
+                    ),
+                    prefixIcon: Icon(Icons.lock, color: Colors.deepPurple[400]),
+                    suffixIcon: IconButton(
+                      icon: Icon(
+                        _obscurePassword ? Icons.visibility : Icons.visibility_off,
+                        color: Colors.deepPurple[400],
+                      ),
+                      onPressed: () {
+                        setState(() {
+                          _obscurePassword = !_obscurePassword;
+                        });
+                      },
+                    ),
+                    contentPadding: EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                  ),
+                ),
+                SizedBox(height: 20),
+                
+                // Confirm Password Field
+                TextField(
+                  controller: _confirmPasswordController,
+                  obscureText: _obscureConfirmPassword,
+                  style: TextStyle(color: Colors.deepPurple[900]),
+                  decoration: InputDecoration(
+                    labelText: "Confirm Password",
+                    labelStyle: TextStyle(color: Colors.deepPurple[400]),
+                    filled: true,
+                    fillColor: Colors.deepPurple[50],
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(15),
+                      borderSide: BorderSide.none,
+                    ),
+                    prefixIcon: Icon(Icons.lock_outline, color: Colors.deepPurple[400]),
+                    suffixIcon: IconButton(
+                      icon: Icon(
+                        _obscureConfirmPassword ? Icons.visibility : Icons.visibility_off,
+                        color: Colors.deepPurple[400],
+                      ),
+                      onPressed: () {
+                        setState(() {
+                          _obscureConfirmPassword = !_obscureConfirmPassword;
+                        });
+                      },
+                    ),
+                    contentPadding: EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                  ),
+                ),
+                SizedBox(height: 32),
+                
+                // Sign Up Button
+                SizedBox(
+                  width: double.infinity,
+                  height: 50,
+                  child: ElevatedButton(
+                    onPressed: _isLoading ? null : _handleSignUp,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: widget.role == "teacher" ? Colors.orange : Colors.deepPurple,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(25),
+                      ),
+                      elevation: 5,
+                      shadowColor: widget.role == "teacher" ? Colors.orangeAccent : Colors.deepPurpleAccent,
+                    ),
+                    child: _isLoading
+                        ? SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                            ),
+                          )
+                        : Text(
+                            "Create Account",
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                            ),
+                          ),
+                  ),
+                ),
+                SizedBox(height: 20),
+                
+                // Back to Login
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: Text(
+                    "Already have an account? Login",
+                    style: TextStyle(
+                      color: Colors.deepPurple,
+                      decoration: TextDecoration.underline,
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),

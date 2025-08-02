@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:attendencetracker/name.dart';
+import 'package:attendencetracker/firebase_connection_test.dart';
 
 class RoleSelectionPage extends StatelessWidget {
   const RoleSelectionPage({super.key});
@@ -13,6 +14,20 @@ class RoleSelectionPage extends StatelessWidget {
         backgroundColor: Colors.deepPurple,
         elevation: 4,
         shadowColor: Colors.deepPurpleAccent,
+        actions: [
+          IconButton(
+            icon: Icon(Icons.bug_report),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => FirebaseConnectionTest(),
+                ),
+              );
+            },
+            tooltip: 'Test Firebase Connection',
+          ),
+        ],
       ),
       body: Center(
         child: Padding(
@@ -32,10 +47,7 @@ class RoleSelectionPage extends StatelessWidget {
               SizedBox(height: 40),
               Text(
                 "Please select your role to continue:",
-                style: TextStyle(
-                  fontSize: 18,
-                  color: Colors.deepPurple[600],
-                ),
+                style: TextStyle(fontSize: 18, color: Colors.deepPurple[600]),
                 textAlign: TextAlign.center,
               ),
               SizedBox(height: 40),
@@ -106,11 +118,7 @@ class RoleSelectionPage extends StatelessWidget {
                   color: color.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(50),
                 ),
-                child: Icon(
-                  icon,
-                  size: 40,
-                  color: color,
-                ),
+                child: Icon(icon, size: 40, color: color),
               ),
               SizedBox(height: 16),
               Text(
@@ -124,10 +132,7 @@ class RoleSelectionPage extends StatelessWidget {
               SizedBox(height: 8),
               Text(
                 description,
-                style: TextStyle(
-                  fontSize: 12,
-                  color: Colors.grey[600],
-                ),
+                style: TextStyle(fontSize: 12, color: Colors.grey[600]),
                 textAlign: TextAlign.center,
               ),
             ],
@@ -140,9 +145,7 @@ class RoleSelectionPage extends StatelessWidget {
   void _navigateToLogin(BuildContext context, String role) {
     Navigator.pushReplacement(
       context,
-      MaterialPageRoute(
-        builder: (context) => NamePage(role: role),
-      ),
+      MaterialPageRoute(builder: (context) => NamePage(role: role)),
     );
   }
-} 
+}

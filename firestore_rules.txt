@@ -15,6 +15,52 @@ service cloud.firestore {
       }
     }
     
+    // Teacher subjects collection - teachers can manage their own subjects
+    match /teacherSubjects/{subjectId} {
+      // Teachers can create new subjects (no resource.data check for create)
+      allow create: if request.auth != null && 
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'teacher' &&
+        request.resource.data.teacherId == request.auth.uid;
+      
+      // Teachers can read and update their own subjects
+      allow read, update, delete: if request.auth != null && 
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'teacher' &&
+        resource.data.teacherId == request.auth.uid;
+      
+      // Students can read subjects they are enrolled in
+      allow read: if request.auth != null && 
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'student';
+      
+      // Enrolled students subcollection
+      match /enrolledStudents/{enrollmentId} {
+        // Teachers can read and write enrollments for their subjects
+        allow read, write: if request.auth != null && 
+          get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'teacher' &&
+          get(/databases/$(database)/documents/teacherSubjects/$(subjectId)).data.teacherId == request.auth.uid;
+        
+        // Students can read their own enrollments
+        allow read: if request.auth != null && 
+          get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'student' &&
+          resource.data.studentId == request.auth.uid;
+      }
+    }
+    
+    // Teacher attendance collection - teachers can write, students can read their own
+    match /teacherAttendance/{attendanceId} {
+      // Teachers can create attendance records
+      allow create: if request.auth != null && 
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'teacher';
+      
+      // Students can read their own attendance records
+      allow read: if request.auth != null && 
+        resource.data.studentId == request.auth.uid;
+      
+      // Teachers can read all attendance records they created
+      allow read: if request.auth != null && 
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'teacher' &&
+        resource.data.teacherId == request.auth.uid;
+    }
+    
     // Deny all other access
     match /{document=**} {
       allow read, write: if false;

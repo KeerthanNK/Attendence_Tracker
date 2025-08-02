@@ -1,14 +1,71 @@
 import 'package:flutter/material.dart';
+import '../firebase_service_simple.dart';
 
-class AddSubjectModal extends StatelessWidget {
-  final TextEditingController controller;
-  final VoidCallback onSave;
+// Modal for enrolling students in a subject
+class EnrollStudentModal extends StatefulWidget {
+  final FirebaseServiceSimple firebaseService;
+  final String subjectId;
+  final String subjectName;
 
-  const AddSubjectModal({
+  const EnrollStudentModal({
     super.key,
-    required this.controller,
-    required this.onSave,
+    required this.firebaseService,
+    required this.subjectId,
+    required this.subjectName,
   });
+
+  @override
+  State<EnrollStudentModal> createState() => _EnrollStudentModalState();
+}
+
+class _EnrollStudentModalState extends State<EnrollStudentModal> {
+  final TextEditingController _emailController = TextEditingController();
+  bool _isLoading = false;
+
+  void _enrollStudent() async {
+    final email = _emailController.text.trim();
+    if (email.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text("Please enter student email"),
+          backgroundColor: Colors.redAccent,
+        ),
+      );
+      return;
+    }
+
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      await widget.firebaseService.enrollStudentInSubject(widget.subjectId, email);
+      if (mounted) {
+        Navigator.pop(context);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text("Student enrolled successfully"),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text("Failed to enroll student: ${e.toString()}"),
+            backgroundColor: Colors.redAccent,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -38,19 +95,19 @@ class AddSubjectModal extends StatelessWidget {
             ),
           ),
           SizedBox(height: 24),
-
+          
           // Header
           Row(
             children: [
               Container(
                 padding: EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: Colors.deepPurple.withValues(alpha: 0.1),
+                  color: Colors.blue.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Icon(
-                  Icons.add_circle,
-                  color: Colors.deepPurple,
+                  Icons.person_add,
+                  color: Colors.blue,
                   size: 24,
                 ),
               ),
@@ -60,7 +117,7 @@ class AddSubjectModal extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      "Add New Subject",
+                      "Enroll Student",
                       style: TextStyle(
                         fontSize: 20,
                         fontWeight: FontWeight.bold,
@@ -68,7 +125,7 @@ class AddSubjectModal extends StatelessWidget {
                       ),
                     ),
                     Text(
-                      "Enter the subject name below",
+                      "Subject: ${widget.subjectName}",
                       style: TextStyle(
                         fontSize: 14,
                         color: Colors.deepPurple[600],
@@ -80,15 +137,15 @@ class AddSubjectModal extends StatelessWidget {
             ],
           ),
           SizedBox(height: 24),
-
-          // Input Field
+          
+          // Email Input
           TextField(
-            controller: controller,
+            controller: _emailController,
             style: TextStyle(color: Colors.deepPurple[900]),
             decoration: InputDecoration(
-              labelText: "Subject Name",
+              labelText: "Student Email",
               labelStyle: TextStyle(color: Colors.deepPurple[400]),
-              hintText: "e.g., Mathematics, Physics, English",
+              hintText: "Enter student's registered email",
               hintStyle: TextStyle(color: Colors.deepPurple[300]),
               filled: true,
               fillColor: Colors.deepPurple[50],
@@ -96,16 +153,12 @@ class AddSubjectModal extends StatelessWidget {
                 borderRadius: BorderRadius.circular(15),
                 borderSide: BorderSide.none,
               ),
-              prefixIcon: Icon(Icons.book, color: Colors.deepPurple[400]),
-              contentPadding: EdgeInsets.symmetric(
-                horizontal: 20,
-                vertical: 16,
-              ),
+              prefixIcon: Icon(Icons.email, color: Colors.deepPurple[400]),
+              contentPadding: EdgeInsets.symmetric(horizontal: 20, vertical: 16),
             ),
-            textCapitalization: TextCapitalization.words,
           ),
           SizedBox(height: 32),
-
+          
           // Action Buttons
           Row(
             children: [
@@ -131,22 +184,31 @@ class AddSubjectModal extends StatelessWidget {
               SizedBox(width: 16),
               Expanded(
                 child: ElevatedButton(
-                  onPressed: onSave,
+                  onPressed: _isLoading ? null : _enrollStudent,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.deepPurple,
+                    backgroundColor: Colors.blue,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(15),
                     ),
                     padding: EdgeInsets.symmetric(vertical: 16),
                     elevation: 3,
                   ),
-                  child: Text(
-                    "Add Subject",
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
+                  child: _isLoading
+                      ? SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                          ),
+                        )
+                      : Text(
+                          "Enroll",
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
                 ),
               ),
             ],
@@ -156,4 +218,4 @@ class AddSubjectModal extends StatelessWidget {
       ),
     );
   }
-}
+} 

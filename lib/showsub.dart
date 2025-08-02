@@ -17,12 +17,44 @@ class ShowSubjects extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (subjects.isEmpty) {
-      return const Center(
-        child: Text("No subjects added yet.", style: TextStyle(fontSize: 18)),
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              padding: EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                color: Colors.deepPurple.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(50),
+              ),
+              child: Icon(
+                Icons.book_outlined,
+                size: 60,
+                color: Colors.deepPurple[400],
+              ),
+            ),
+            SizedBox(height: 24),
+            Text(
+              "No subjects added yet",
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+                color: Colors.deepPurple[800],
+              ),
+            ),
+            SizedBox(height: 8),
+            Text(
+              "Tap the + button to add your first subject",
+              style: TextStyle(fontSize: 16, color: Colors.deepPurple[600]),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
       );
     }
 
     return ListView.builder(
+      padding: EdgeInsets.all(16),
       itemCount: subjects.length,
       itemBuilder: (context, index) {
         final subject = subjects[index];
@@ -36,100 +68,217 @@ class ShowSubjects extends StatelessWidget {
             totalClasses > 0 ? (presentClasses / totalClasses) * 100 : 0.0;
 
         return Container(
-          margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-          child: Card(
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16),
-            ),
-            elevation: 4,
-            shadowColor: Colors.deepPurple.shade100,
-            child: Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Subject Info
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+          margin: EdgeInsets.only(bottom: 16),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(20),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.deepPurple.withValues(alpha: 0.1),
+                blurRadius: 10,
+                offset: Offset(0, 4),
+              ),
+            ],
+          ),
+          child: Padding(
+            padding: EdgeInsets.all(20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Header Row
+                Row(
+                  children: [
+                    Container(
+                      padding: EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Colors.deepPurple.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Icon(
+                        Icons.book,
+                        color: Colors.deepPurple,
+                        size: 24,
+                      ),
+                    ),
+                    SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            subjectName,
+                            style: TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.deepPurple[800],
+                            ),
+                          ),
+                          Text(
+                            "Total Classes: $totalClasses",
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: Colors.deepPurple[600],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    if (onDelete != null)
+                      IconButton(
+                        onPressed:
+                            () => _showDeleteDialog(
+                              context,
+                              subjectId,
+                              subjectName,
+                            ),
+                        icon: Icon(
+                          Icons.delete_outline,
+                          color: Colors.red[400],
+                        ),
+                        tooltip: 'Delete Subject',
+                      ),
+                  ],
+                ),
+                SizedBox(height: 20),
+
+                // Statistics Row
+                Row(
+                  children: [
+                    Expanded(
+                      child: _buildStatCard(
+                        "Present",
+                        presentClasses.toString(),
+                        Icons.check_circle,
+                        Colors.green,
+                      ),
+                    ),
+                    SizedBox(width: 12),
+                    Expanded(
+                      child: _buildStatCard(
+                        "Absent",
+                        absentClasses.toString(),
+                        Icons.cancel,
+                        Colors.red,
+                      ),
+                    ),
+                  ],
+                ),
+                SizedBox(height: 20),
+
+                // Progress Section
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text(
-                          subjectName,
-                          style: const TextStyle(
-                            fontSize: 22,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.deepPurple,
+                          "Attendance Rate",
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.deepPurple[700],
                           ),
                         ),
-                        const SizedBox(height: 6),
-                        Text("Total Classes: $totalClasses"),
-                        Text("Present: $presentClasses"),
-                        Text("Absent: $absentClasses"),
-                        const SizedBox(height: 8),
-                        LinearProgressIndicator(
-                          value: percentage / 100,
-                          backgroundColor: Colors.grey.shade300,
-                          color: percentage >= 85 ? Colors.green : Colors.red,
-                          minHeight: 8,
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        const SizedBox(height: 6),
                         Text(
-                          "Attendance: ${percentage.toStringAsFixed(1)}%",
+                          "${percentage.toStringAsFixed(1)}%",
                           style: TextStyle(
-                            color: percentage >= 85 ? Colors.green : Colors.red,
+                            fontSize: 16,
                             fontWeight: FontWeight.bold,
+                            color: percentage >= 85 ? Colors.green : Colors.red,
                           ),
                         ),
                       ],
                     ),
-                  ),
-                  const SizedBox(width: 12),
-                  // Buttons
-                  Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Tooltip(
-                        message: 'Mark Present',
-                        child: IconButton(
-                          onPressed: () => onAdd(subjectId),
-                          icon: const Icon(Icons.add_circle),
-                          color: Colors.green,
-                          iconSize: 30,
-                        ),
-                      ),
-                      Tooltip(
-                        message: 'Mark Absent',
-                        child: IconButton(
-                          onPressed: () => onRemove(subjectId),
-                          icon: const Icon(Icons.remove_circle),
-                          color: Colors.red,
-                          iconSize: 30,
-                        ),
-                      ),
-                      if (onDelete != null)
-                        Tooltip(
-                          message: 'Delete Subject',
-                          child: IconButton(
-                            onPressed:
-                                () => _showDeleteDialog(
-                                  context,
-                                  subjectId,
-                                  subjectName,
-                                ),
-                            icon: const Icon(Icons.delete),
-                            color: Colors.orange,
-                            iconSize: 30,
+                    SizedBox(height: 8),
+                    LinearProgressIndicator(
+                      value: percentage / 100,
+                      backgroundColor: Colors.grey[200],
+                      color: percentage >= 85 ? Colors.green : Colors.red,
+                      minHeight: 8,
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                  ],
+                ),
+                SizedBox(height: 20),
+
+                // Action Buttons
+                Row(
+                  children: [
+                    Expanded(
+                      child: ElevatedButton.icon(
+                        onPressed: () => onAdd(subjectId),
+                        icon: Icon(Icons.add, size: 18),
+                        label: Text("Present"),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.green,
+                          foregroundColor: Colors.white,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
                           ),
+                          padding: EdgeInsets.symmetric(vertical: 12),
+                          elevation: 2,
                         ),
-                    ],
-                  ),
-                ],
-              ),
+                      ),
+                    ),
+                    SizedBox(width: 12),
+                    Expanded(
+                      child: ElevatedButton.icon(
+                        onPressed: () => onRemove(subjectId),
+                        icon: Icon(Icons.remove, size: 18),
+                        label: Text("Absent"),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.red,
+                          foregroundColor: Colors.white,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          padding: EdgeInsets.symmetric(vertical: 12),
+                          elevation: 2,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
             ),
           ),
         );
       },
+    );
+  }
+
+  Widget _buildStatCard(
+    String label,
+    String value,
+    IconData icon,
+    Color color,
+  ) {
+    return Container(
+      padding: EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: color.withValues(alpha: 0.3)),
+      ),
+      child: Column(
+        children: [
+          Icon(icon, color: color, size: 24),
+          SizedBox(height: 8),
+          Text(
+            value,
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+              color: color,
+            ),
+          ),
+          Text(
+            label,
+            style: TextStyle(fontSize: 12, color: color.withValues(alpha: 0.8)),
+          ),
+        ],
+      ),
     );
   }
 
@@ -142,21 +291,52 @@ class ShowSubjects extends StatelessWidget {
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: const Text('Delete Subject'),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          title: Row(
+            children: [
+              Icon(Icons.warning_amber_rounded, color: Colors.orange, size: 24),
+              SizedBox(width: 12),
+              Text(
+                'Delete Subject',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+            ],
+          ),
           content: Text(
-            'Are you sure you want to delete "$subjectName"? This action cannot be undone.',
+            'Are you sure you want to delete "$subjectName"?\n\nThis action cannot be undone and all attendance data will be lost.',
+            style: TextStyle(fontSize: 16),
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Cancel'),
+              child: Text(
+                'Cancel',
+                style: TextStyle(
+                  color: Colors.deepPurple[600],
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
             ),
-            TextButton(
+            ElevatedButton(
               onPressed: () {
                 Navigator.of(context).pop();
                 onDelete!(subjectId);
               },
-              child: const Text('Delete', style: TextStyle(color: Colors.red)),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.red,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+              child: Text(
+                'Delete',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
             ),
           ],
         );

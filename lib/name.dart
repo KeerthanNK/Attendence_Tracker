@@ -18,6 +18,7 @@ class _NamePageState extends State<NamePage> {
 
   final FirebaseServiceSimple _firebaseService = FirebaseServiceSimple();
   bool _isLoading = false;
+  bool _obscurePassword = true;
 
   void _handleLogin() async {
     String email = _emailController.text.trim();
@@ -48,29 +49,48 @@ class _NamePageState extends State<NamePage> {
         password,
         widget.role,
       );
+
       // On successful login, navigate to appropriate view
       if (mounted) {
         setState(() {
           _isLoading = false;
         });
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(
-            builder:
-                (context) =>
-                    widget.role == "teacher"
-                        ? TeacherView(title: "Hello, $email", role: widget.role)
-                        : StudentView(
-                          title: "Hello, $email",
-                          role: widget.role,
-                        ),
+
+        // Show success message
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text("Login successful! Welcome back."),
+            backgroundColor: Colors.green,
+            duration: Duration(seconds: 1),
           ),
         );
+
+        // Navigate after a short delay to show success message
+        Future.delayed(Duration(milliseconds: 500), () {
+          if (mounted) {
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(
+                builder:
+                    (context) =>
+                        widget.role == "teacher"
+                            ? TeacherView(
+                              title: "Hello, $email",
+                              role: widget.role,
+                            )
+                            : StudentView(
+                              title: "Hello, $email",
+                              role: widget.role,
+                            ),
+              ),
+            );
+          }
+        });
       }
     } catch (e) {
       String message = "An error occurred";
       if (e.toString().contains('user-not-found')) {
-        message = "No user found for that email.";
+        message = "No user found for that email. Please sign up first.";
       } else if (e.toString().contains('wrong-password')) {
         message = "Wrong password provided for that user.";
       } else if (e.toString().contains('invalid-email')) {
@@ -82,15 +102,26 @@ class _NamePageState extends State<NamePage> {
       } else if (e.toString().contains('Invalid role')) {
         message =
             "This account is not registered as a ${widget.role}. Please sign up as a ${widget.role}.";
+      } else if (e.toString().contains(
+        'User account not properly configured',
+      )) {
+        message = "Account setup incomplete. Please try signing up first.";
       } else {
         message = "Login error: ${e.toString()}";
       }
+
+      print("Login error details: $e");
+
       if (mounted) {
         setState(() {
           _isLoading = false;
         });
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(message), backgroundColor: Colors.redAccent),
+          SnackBar(
+            content: Text(message),
+            backgroundColor: Colors.redAccent,
+            duration: Duration(seconds: 4),
+          ),
         );
       }
     }
@@ -125,106 +156,178 @@ class _NamePageState extends State<NamePage> {
                 : Colors.deepPurpleAccent,
       ),
       body: Center(
-        child: Container(
-          height: 450,
-          width: 320,
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(25),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.deepPurple.withValues(alpha: 0.3),
-                blurRadius: 15,
-                offset: Offset(0, 8),
-              ),
-            ],
-          ),
-          padding: EdgeInsets.symmetric(horizontal: 24, vertical: 32),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Text(
-                "Welcome Back",
-                style: TextStyle(
-                  fontSize: 28,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.deepPurple,
+        child: SingleChildScrollView(
+          padding: EdgeInsets.all(24),
+          child: Container(
+            width: 350,
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(25),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.deepPurple.withValues(alpha: 0.3),
+                  blurRadius: 15,
+                  offset: Offset(0, 8),
                 ),
-              ),
-              SizedBox(height: 30),
-              TextField(
-                controller: _emailController,
-                style: TextStyle(color: Colors.deepPurple[900]),
-                decoration: InputDecoration(
-                  labelText: "Email",
-                  labelStyle: TextStyle(color: Colors.deepPurple[400]),
-                  filled: true,
-                  fillColor: Colors.deepPurple[50],
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(15),
-                    borderSide: BorderSide.none,
+              ],
+            ),
+            padding: EdgeInsets.symmetric(horizontal: 32, vertical: 40),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Header
+                Container(
+                  padding: EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    color: (widget.role == "teacher"
+                            ? Colors.orange
+                            : Colors.deepPurple)
+                        .withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(50),
                   ),
-                  prefixIcon: Icon(Icons.email, color: Colors.deepPurple[400]),
+                  child: Icon(
+                    widget.role == "teacher" ? Icons.school : Icons.person,
+                    size: 50,
+                    color:
+                        widget.role == "teacher"
+                            ? Colors.orange
+                            : Colors.deepPurple,
+                  ),
                 ),
-              ),
-              SizedBox(height: 20),
-              TextField(
-                controller: _passwordController,
-                obscureText: true,
-                style: TextStyle(color: Colors.deepPurple[900]),
-                decoration: InputDecoration(
-                  labelText: "Password",
-                  labelStyle: TextStyle(color: Colors.deepPurple[400]),
-                  filled: true,
-                  fillColor: Colors.deepPurple[50],
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(15),
-                    borderSide: BorderSide.none,
-                  ),
-                  prefixIcon: Icon(Icons.lock, color: Colors.deepPurple[400]),
-                ),
-              ),
-              SizedBox(height: 30),
-              ElevatedButton(
-                onPressed: _isLoading ? null : _handleLogin,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.deepPurple,
-                  padding: EdgeInsets.symmetric(horizontal: 60, vertical: 15),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(25),
-                  ),
-                  textStyle: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                  ),
-                  elevation: 5,
-                ),
-                child:
-                    _isLoading
-                        ? SizedBox(
-                          width: 20,
-                          height: 20,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            valueColor: AlwaysStoppedAnimation<Color>(
-                              Colors.white,
-                            ),
-                          ),
-                        )
-                        : Text("Login"),
-              ),
-              SizedBox(height: 15),
-              TextButton(
-                onPressed: _navigateToSignUp,
-                child: Text(
-                  "Don't have an account? Sign Up",
+                SizedBox(height: 24),
+                Text(
+                  "Welcome Back",
                   style: TextStyle(
-                    color: Colors.deepPurple,
-                    decoration: TextDecoration.underline,
+                    fontSize: 28,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.deepPurple[800],
                   ),
                 ),
-              ),
-            ],
+                SizedBox(height: 8),
+                Text(
+                  "Sign in to your ${widget.role} account",
+                  style: TextStyle(fontSize: 16, color: Colors.deepPurple[600]),
+                ),
+                SizedBox(height: 32),
+
+                // Email Field
+                TextField(
+                  controller: _emailController,
+                  style: TextStyle(color: Colors.deepPurple[900]),
+                  decoration: InputDecoration(
+                    labelText: "Email Address",
+                    labelStyle: TextStyle(color: Colors.deepPurple[400]),
+                    filled: true,
+                    fillColor: Colors.deepPurple[50],
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(15),
+                      borderSide: BorderSide.none,
+                    ),
+                    prefixIcon: Icon(
+                      Icons.email,
+                      color: Colors.deepPurple[400],
+                    ),
+                    contentPadding: EdgeInsets.symmetric(
+                      horizontal: 20,
+                      vertical: 16,
+                    ),
+                  ),
+                ),
+                SizedBox(height: 20),
+
+                // Password Field
+                TextField(
+                  controller: _passwordController,
+                  obscureText: _obscurePassword,
+                  style: TextStyle(color: Colors.deepPurple[900]),
+                  decoration: InputDecoration(
+                    labelText: "Password",
+                    labelStyle: TextStyle(color: Colors.deepPurple[400]),
+                    filled: true,
+                    fillColor: Colors.deepPurple[50],
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(15),
+                      borderSide: BorderSide.none,
+                    ),
+                    prefixIcon: Icon(Icons.lock, color: Colors.deepPurple[400]),
+                    suffixIcon: IconButton(
+                      icon: Icon(
+                        _obscurePassword
+                            ? Icons.visibility
+                            : Icons.visibility_off,
+                        color: Colors.deepPurple[400],
+                      ),
+                      onPressed: () {
+                        setState(() {
+                          _obscurePassword = !_obscurePassword;
+                        });
+                      },
+                    ),
+                    contentPadding: EdgeInsets.symmetric(
+                      horizontal: 20,
+                      vertical: 16,
+                    ),
+                  ),
+                ),
+                SizedBox(height: 32),
+
+                // Login Button
+                SizedBox(
+                  width: double.infinity,
+                  height: 50,
+                  child: ElevatedButton(
+                    onPressed: _isLoading ? null : _handleLogin,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor:
+                          widget.role == "teacher"
+                              ? Colors.orange
+                              : Colors.deepPurple,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(25),
+                      ),
+                      elevation: 5,
+                      shadowColor:
+                          widget.role == "teacher"
+                              ? Colors.orangeAccent
+                              : Colors.deepPurpleAccent,
+                    ),
+                    child:
+                        _isLoading
+                            ? SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                valueColor: AlwaysStoppedAnimation<Color>(
+                                  Colors.white,
+                                ),
+                              ),
+                            )
+                            : Text(
+                              "Sign In",
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white,
+                              ),
+                            ),
+                  ),
+                ),
+                SizedBox(height: 20),
+
+                // Sign Up Link
+                TextButton(
+                  onPressed: _navigateToSignUp,
+                  child: Text(
+                    "Don't have an account? Sign Up",
+                    style: TextStyle(
+                      color: Colors.deepPurple,
+                      decoration: TextDecoration.underline,
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),
